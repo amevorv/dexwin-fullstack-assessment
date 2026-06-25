@@ -1,8 +1,13 @@
 const BASE_URL = 'http://localhost:8080/api';
 
 async function request(path, options) {
-  const res = await fetch(`${BASE_URL}${path}`, options);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, options);
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return [];
+  }
 }
 
 export function getProjects() {

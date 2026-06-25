@@ -7,7 +7,7 @@ const PRIORITY = {
 export default function TaskItem({ task, onToggle }) {
   const done = task.status === 'DONE';
   const statusLabel = (task.status || '').replace('_', ' ').toLowerCase();
-  const priority = PRIORITY[task.priority];
+  const priority = task.priority &&  PRIORITY[task.priority];
 
   return (
     <div className={'task-card' + (done ? ' done' : '')}>
@@ -17,12 +17,12 @@ export default function TaskItem({ task, onToggle }) {
           <span className={'status-badge status-' + (task.status || '').toLowerCase()}>
             {statusLabel}
           </span>
-          {task.priority != null && (
+          {task.priority !== null && (
             <span className={'priority-pill' + (priority ? ' priority-' + priority.cls : '')}>
               {priority ? priority.label : 'P' + task.priority}
             </span>
           )}
-          {task.assignee && <span className="assignee-chip">{task.assignee.username}</span>}
+          {task.assignee && <span className="assignee-chip">{task.assignee?.username}</span>}
         </div>
       </div>
       <button className="toggle-btn" onClick={() => onToggle(task)}>

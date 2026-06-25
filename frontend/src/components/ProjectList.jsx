@@ -5,7 +5,8 @@ export default function ProjectList({ selectedProjectId, onSelect }) {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    getProjects().then(setProjects);
+    getProjects()
+      .then(data => setProjects(data));
   }, []);
 
   return (
@@ -13,6 +14,8 @@ export default function ProjectList({ selectedProjectId, onSelect }) {
       {projects.map((project) => (
         <button
           type="button"
+          id={`button-${project.id}`}
+          aria-label={`Select project ${project.name}`}
           key={project.id}
           className={
             'project-item' + (project.id === selectedProjectId ? ' active' : '')
