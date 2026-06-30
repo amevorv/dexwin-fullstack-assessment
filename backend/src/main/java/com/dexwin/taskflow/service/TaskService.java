@@ -6,6 +6,8 @@ import com.dexwin.taskflow.repository.TaskRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,21 +33,25 @@ public class TaskService {
             summary.put("id", task.getId());
             summary.put("title", task.getTitle());
             summary.put("status", task.getStatus());
-            // Pull related data per task as we build the response.
             summary.put("assignee", task.getAssignee() != null ? task.getAssignee().getUsername() : null);
-            summary.put("commentCount", task.getComments().size());
+            summary.put("commentCount", task.getComments() != null ? task.getComments().size() : 0);
             summaries.add(summary);
         }
         return summaries;
     }
 
+    @Transactional(readOnly = true)
     public List<Task> search(String query) {
-        String sql = "SELECT * FROM tasks WHERE title LIKE ?";
-        return entityManager.createNativeQuery(sql, Task.class).setParameter(1, "%" + query + "%").getResultList();
+        String jpql = "SELECT t FROM Task t WHERE lower(t.title) LIKE lower(:query)";
+        return entityManager.createQuery(jpql, Task.class)
+            .setParameter("query", "%" + query + "%")
+            .getResultList();
     }
 
+    @Transactional
     public Task updateStatus(Long taskId, TaskStatus status) {
-        Task task = taskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("Task not found"));
+        Task task = taskRepository.findById(taskId)
+            .orElseThrow(() -> new IllegalArgumentException("Task not found"));
         task.setStatus(status);
         return taskRepository.save(task);
     }
