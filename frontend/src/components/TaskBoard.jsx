@@ -4,18 +4,51 @@ import TaskItem from './TaskItem.jsx';
 
 export default function TaskBoard({ projectId }) {
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    getTasks(projectId).then((data) => {
-      setTasks(data);
-    });
+    let active = true;
+
+    setLoading(true);
+    getTasks(projectId)
+      .then((data) => {
+        if (active) {
+          setTasks(Array.isArray(data) ? data : []);
+          setError('');
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err.message || 'Unable to load tasks');
+          setTasks([]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [projectId]);
 
-  const handleToggle = (task) => {
+  const handleToggle = async (task) => {
     const next = task.status === 'DONE' ? 'TODO' : 'DONE';
-    task.status = next;
-    setTasks(tasks);
-    updateTaskStatus(task.id, next);
+    setTasks((currentTasks) =>
+      currentTasks.map((item) => (item.id === task.id ? { ...item, status: next } : item))
+    );
+
+    try {
+      await updateTaskStatus(task.id, next);
+    } catch (err) {
+      setError(err.message || 'Unable to update task');
+      setTasks((currentTasks) =>
+        currentTasks.map((item) => (item.id === task.id ? { ...item, status: task.status } : item))
+      );
+    }
   };
 
   return (
@@ -24,11 +57,17 @@ export default function TaskBoard({ projectId }) {
         <h2>Tasks</h2>
         <span className="task-count">{tasks.length}</span>
       </div>
-      <div className="task-list">
-        {tasks.map((task, index) => (
-          <TaskItem key={index} task={task} onToggle={handleToggle} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="empty-state">Loading tasks…</div>
+      ) : error ? (
+        <div className="empty-state">{error}</div>
+      ) : (
+        <div className="task-list">
+          {tasks.map((task) => (
+            <TaskItem key={task.id} task={task} onToggle={handleToggle} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
